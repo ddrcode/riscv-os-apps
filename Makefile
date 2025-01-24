@@ -13,6 +13,8 @@ ABI := ilp32e
 ASFLAGS := -march=$(ARCH) -mabi=$(ABI) -I headers
 CFLAGS := -march=$(ARCH) -mabi=$(ABI)  -nostdlib -static -I headers -T platforms/virt.ld
 
+CARGO_FLAGS := -Zbuild-std=core --target ./riscv32im-unknown-none-elf.json --release
+
 ifneq ($(filter release, $(MAKECMDGOALS)),)
 CFLAGS += -Os
 LDFLAGS += --gc-sections
@@ -22,43 +24,52 @@ CFLAGS += -g -O0
 LDFLAGS += -g --no-gc-sections
 endif
 
+VPATH := common
 OUT := build
+RELEASE = $(OUT)/release
 
 #----------------------------------------
 # Project files
 
-VPATH = apps/hello
 
 default: build-all
 
 $(OUT):
 	mkdir -p $(OUT)
 
+$(RELEASE):
+	mkdir -p $(RELEASE)
 
-$(OUT)/hello-asm: $(OUT) apps/hello-asm/hello.s
+$(OUT)/common.o: $(OUT) common/*.s
+	$(AS) $(ASFLAGS) -o $(OUT)/common.o common/*.s
+
+$(OUT)/hello-asm.elf: $(OUT) apps/hello-asm/hello.s
 	$(CC) $(CFLAGS) -o $(OUT)/hello-asm.elf apps/hello-asm/hello.s
-	$(TOOL)-objcopy -O binary $(OUT)/hello-asm.elf $(OUT)/hello-asm
-	rm $(OUT)/hello-asm.elf
 
+$(OUT)/hello-c.elf: $(OUT)/common.o apps/hello-c/hello.c
+	$(CC) $(CFLAGS) -o $(OUT)/hello-c.elf build/common.o apps/hello-c/hello.c
 
-$(OUT)/hello-c: $(OUT) apps/hello-c/hello.c
-	$(CC) $(CFLAGS) -o $(OUT)/hello-c.elf common/startup.s apps/hello-c/hello.c common/stdlib.s
-	$(TOOL)-objcopy -O binary $(OUT)/hello-c.elf $(OUT)/hello-c
-	rm $(OUT)/hello-c.elf
+build-rust: $(OUT)
+	cargo build -Zbuild-std=core --target platforms/riscv32im-unknown-none-elf.json --release
+	cp target/riscv32im-unknown-none-elf/release/hello-rust $(OUT)/hello-rust.elf
 
+build-all: build-rust $(OUT)/hello-asm.elf $(OUT)/hello-c.elf
 
-build-all: $(OUT)/hello-asm $(OUT)/hello-c
+$(RELEASE)/%: $(OUT)/%.elf | $(RELEASE)
+	$(TOOL)-objcopy -O binary $< $@
 
+release-all: build-rust $(RELEASE)/hello-asm $(RELEASE)/hello-c $(RELEASE)/hello-rust
 
-disc: build-all
+disc: release-all
 	rm -f disc.tar
-	touch $(OUT)/.system
-	ls -A $(OUT) | xargs tar -cvf disc.tar -C $(OUT)
+	touch $(OUT)/release/.system
+	ls -A $(OUT)/release | xargs tar -cvf disc.tar -C $(OUT)/release
 	truncate -s 33554432 disc.tar
 
 
 clean:
-	rm -rf build/*
+	rm -rf $(OUT)
+	cargo clean
 
 
-.PHONY: clean disc build-all
+.PHONY: clean disc build-all build-rust

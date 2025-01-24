@@ -2,7 +2,7 @@
 
 int main() {
     char* msg = "Running C program";
-    // syscall((u32)msg, 0, 0, 0, 0, 22);
-    prints(msg);
+    syscall((u32)msg, 0, 0, 0, 0, 22);
+    // prints(msg);
     return 3;
 }
