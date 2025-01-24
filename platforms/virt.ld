@@ -21,7 +21,7 @@ SECTIONS
         *(.text.start);
         *(.text .text.*)
     } > RAM
-    .rodata (READONLY) : ALIGN(32) { *(.rodata) } > RAM
+    .rodata : ALIGN(32) { *(.rodata) } > RAM
     .bss : ALIGN(32) { *(.bss) }
     .data : ALIGN(32) { *(.data) }
 }

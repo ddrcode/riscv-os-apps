@@ -9,6 +9,7 @@ in
       qemu
       minicom
       ccls
+      rustup
     ] ++ optionals isLinux [
       gdb
     ];
