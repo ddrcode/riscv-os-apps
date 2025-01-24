@@ -1,7 +1,7 @@
 #!make
 
-
 TOOL := riscv64-none-elf
+
 AS := $(TOOL)-as
 CC := $(TOOL)-cc
 LD := $(TOOL)-ld
@@ -33,8 +33,11 @@ export COMMON := $(ROOT)/$(OUT)/common.o
 
 MAKE := OUT=$(ROOT)/$(OUT) make --warn-undefined-variables --no-print-directory
 
+APPS := hello-asm hello-c
+APP_TARGETS := $(addsuffix .elf, $(addprefix $(OUT)/, $(APPS)))
+
+
 #----------------------------------------
-# Project files
 
 
 default: build-all
@@ -48,21 +51,14 @@ $(RELEASE):
 $(OUT)/common.o: $(OUT) common/*.s
 	$(AS) $(ASFLAGS) -o $(OUT)/common.o common/*.s
 
-
 $(OUT)/%.elf: $(OUT)/common.o apps/%/Makefile
-	$(MAKE) -C ./apps/hello-c -f Makefile $(ROOT)/$@
-
-# $(OUT)/hello-asm.elf: $(OUT) apps/hello-asm/hello.s
-# 	$(CC) $(CFLAGS) -o $(OUT)/hello-asm.elf apps/hello-asm/hello.s
-
-# $(OUT)/hello-c.elf: $(OUT)/common.o apps/hello-c/hello.c
-# 	$(CC) $(CFLAGS) -o $(OUT)/hello-c.elf build/common.o apps/hello-c/hello.c
+	$(MAKE) -C ./apps/$(patsubst %.elf,%,$(@F)) -f Makefile $(ROOT)/$@
 
 build-rust: $(OUT)
 	cargo build -Zbuild-std=core --target platforms/riscv32im-unknown-none-elf.json --release
 	cp target/riscv32im-unknown-none-elf/release/hello-rust $(OUT)/hello-rust.elf
 
-build-all: build-rust $(OUT)/hello-asm.elf $(OUT)/hello-c.elf
+build-all: $(APP_TARGETS) build-rust
 
 $(RELEASE)/%: $(OUT)/%.elf | $(RELEASE)
 	$(TOOL)-objcopy -O binary $< $@
@@ -75,11 +71,11 @@ disc: release-all
 	ls -A $(OUT)/release | xargs tar -cvf disc.tar -C $(OUT)/release
 	truncate -s 33554432 disc.tar
 
-
 clean:
-	$(MAKE) -C ./apps/hello-c -f Makefile clean
-	rm -rf $(OUT)
+	@for app in $(APPS); do \
+		$(MAKE) -C ./apps/$$app -f Makefile clean ;\
+	done
 	cargo clean
-
+	rm -rf $(OUT)
 
 .PHONY: clean disc build-all build-rust
