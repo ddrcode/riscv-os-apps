@@ -52,7 +52,8 @@ build-all: $(OUT)/hello-asm $(OUT)/hello-c
 
 disc: build-all
 	rm disc.tar
-	ls $(OUT) | xargs tar -cvf disc.tar -C $(OUT)
+	touch $(OUT)/.hidden
+	ls -A $(OUT) | xargs tar -cvf disc.tar -C $(OUT)
 	truncate -s 33554432 disc.tar
 
 
