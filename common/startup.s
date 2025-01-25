@@ -1,6 +1,5 @@
 .section .text.start
 
-.extern main
 .global _start
 
 _start:
@@ -22,6 +21,6 @@ _start:
 
     # lw ra, 12(sp)
     # addi sp, sp, 16
-
-1:
-    j 1b
+#
+loop:
+    j loop

@@ -11,7 +11,7 @@ export ROOT := ../..
 RISC_V_EXTENSIONS := emzicsr
 ARCH := rv32$(RISC_V_EXTENSIONS)
 ABI := ilp32e
-export ASFLAGS := -march=$(ARCH) -mabi=$(ABI) -I headers
+export ASFLAGS := -march=$(ARCH) -mabi=$(ABI) -I headers --defsym OUTPUT_DEV=2 --defsym m_$(MACHINE)=1
 export CFLAGS := -march=$(ARCH) -mabi=$(ABI)  -nostdlib -static -I $(ROOT)/headers -T $(ROOT)/platforms/virt.ld
 
 CARGO_FLAGS := -Zbuild-std=core --target ./riscv32im-unknown-none-elf.json --release
@@ -33,8 +33,9 @@ export COMMON := $(ROOT)/$(OUT)/common.o
 
 MAKE := OUT=$(ROOT)/$(OUT) make --warn-undefined-variables --no-print-directory
 
-APPS := hello-asm hello-c
+APPS := hello-asm hello-c date
 APP_TARGETS := $(addsuffix .elf, $(addprefix $(OUT)/, $(APPS)))
+APP_RELEASES := $(addprefix $(RELEASE)/, $(APPS))
 
 
 #----------------------------------------
@@ -48,8 +49,8 @@ $(OUT):
 $(RELEASE):
 	mkdir -p $(RELEASE)
 
-$(OUT)/common.o: $(OUT) common/*.s
-	$(AS) $(ASFLAGS) -o $(OUT)/common.o common/*.s
+$(OUT)/common.o: $(OUT) lib/*.s common/*.s
+	$(AS) $(ASFLAGS) -o $(OUT)/common.o common/*.s lib/*.s
 
 $(OUT)/%.elf: $(OUT)/common.o apps/%/Makefile
 	$(MAKE) -C ./apps/$(patsubst %.elf,%,$(@F)) -f Makefile $(ROOT)/$@
@@ -61,9 +62,10 @@ build-rust: $(OUT)
 build-all: $(APP_TARGETS) build-rust
 
 $(RELEASE)/%: $(OUT)/%.elf | $(RELEASE)
+	$(TOOL)-strip --strip-all $<
 	$(TOOL)-objcopy -O binary $< $@
 
-release-all: build-rust $(RELEASE)/hello-asm $(RELEASE)/hello-c $(RELEASE)/hello-rust
+release-all: $(APP_RELEASES) # $(RELEASE)/hello-rust
 
 disc: release-all
 	rm -f disc.tar
@@ -79,3 +81,5 @@ clean:
 	rm -rf $(OUT)
 
 .PHONY: clean disc build-all build-rust
+
+
