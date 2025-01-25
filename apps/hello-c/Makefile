@@ -10,7 +10,7 @@ $(OUT):
 	mkdir -p $(OUT)
 
 $(OUT)/$(ELF): hello.c
-	$(CC) $(CFLAGS) -o $(OUT)/$(ELF) $(COMMON) hello.c
+	$(CC) $(CFLAGS) -Os -flto -ffunction-sections -fdata-sections -o $(OUT)/$(ELF) $(COMMON) hello.c
 
 .PHONY: clean
 

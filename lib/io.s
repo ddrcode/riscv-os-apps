@@ -164,18 +164,12 @@ endfn
 fn _printc_bcksp
     stack_alloc 4
 
-.if OUTPUT_DEV & 0b10
     li a0, '\b'
     syscall SYSFN_PRINT_CHAR
     li a0, ' '
     syscall SYSFN_PRINT_CHAR
     li a0, '\b'
     syscall SYSFN_PRINT_CHAR
-.endif
-
-.if OUTPUT_DEV & 1
-    call scr_backspace
-.endif
 
     stack_free 4
     ret
