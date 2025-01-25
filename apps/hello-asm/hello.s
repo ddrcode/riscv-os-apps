@@ -16,7 +16,7 @@ main:
 
 .section .rodata
 
-hello: .string "Hello, asm"
+hello: .string "Hello, asm\n"
 
 
 

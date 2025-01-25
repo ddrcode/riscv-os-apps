@@ -33,7 +33,7 @@ export COMMON := $(ROOT)/$(OUT)/common.o
 
 MAKE := OUT=$(ROOT)/$(OUT) make --warn-undefined-variables --no-print-directory
 
-APPS := hello-asm hello-c date
+APPS := hello-asm hello-c date ls
 APP_TARGETS := $(addsuffix .elf, $(addprefix $(OUT)/, $(APPS)))
 APP_RELEASES := $(addprefix $(RELEASE)/, $(APPS))
 
@@ -52,8 +52,8 @@ $(RELEASE):
 $(OUT)/common.o: $(OUT) lib/*.s common/*.s
 	$(AS) $(ASFLAGS) -o $(OUT)/common.o common/*.s lib/*.s
 
-$(OUT)/%.elf: $(OUT)/common.o apps/%/Makefile
-	$(MAKE) -C ./apps/$(patsubst %.elf,%,$(@F)) -f Makefile $(ROOT)/$@
+$(OUT)/%.elf: apps/%/* $(OUT)/common.o
+	$(MAKE) -C ./apps/$(patsubst %.elf,%,$(@F)) -f $(patsubst %.elf,%,$(@F)).mk $(ROOT)/$@
 
 build-rust: $(OUT)
 	cargo build -Zbuild-std=core --target platforms/riscv32im-unknown-none-elf.json --release
@@ -75,7 +75,7 @@ disc: release-all
 
 clean:
 	@for app in $(APPS); do \
-		$(MAKE) -C ./apps/$$app -f Makefile clean ;\
+		$(MAKE) -C ./apps/$$app -f $$app.mk clean ;\
 	done
 	cargo clean
 	rm -rf $(OUT)
