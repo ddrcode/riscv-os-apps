@@ -65,7 +65,7 @@ $(RELEASE)/%: $(OUT)/%.elf | $(RELEASE)
 	$(TOOL)-strip --strip-all $<
 	$(TOOL)-objcopy -O binary $< $@
 
-release-all: $(APP_RELEASES) # $(RELEASE)/hello-rust
+release-all: $(APP_RELEASES)
 
 disc: release-all
 	rm -f disc.tar
