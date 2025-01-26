@@ -33,7 +33,7 @@ export COMMON := $(ROOT)/$(OUT)/common.o
 
 MAKE := OUT=$(ROOT)/$(OUT) make --warn-undefined-variables --no-print-directory
 
-APPS := hello-asm hello-c date ls
+APPS := hello-asm hello-c date ls fbdump
 APP_TARGETS := $(addsuffix .elf, $(addprefix $(OUT)/, $(APPS)))
 APP_RELEASES := $(addprefix $(RELEASE)/, $(APPS))
 

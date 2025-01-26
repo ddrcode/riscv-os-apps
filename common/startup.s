@@ -11,6 +11,7 @@ _start:
     # li a5, 21
     # ecall
 
+    call scr_init
     call main
 
     # li a5, 21
