@@ -21,12 +21,32 @@
 
 fn printc
     stack_alloc
+    push s1, 8
+    sb a0, (sp)
+    sb zero, 1(sp)
 
-    andi a0, a0, 0xff
+    li a0, INFO_OUTPUT_DEV             # get active output device(s)
+    syscall SYSFN_GET_CFG
+    mv s1, a0
 
-    syscall SYSFN_PRINT_CHAR
+    andi t0, s1, 0b10                  # if UART is active
+    beqz t0, 1f
+        lb a0, 0(sp)
+        syscall SYSFN_PRINT_CHAR
 
+1:
+    andi t0, s1, 1                     # if frmebuffer is active
+    beqz t0, 3f
+        mv a0, sp
+        lbu t0, (a0)
+        li t1, '\n'
+        bne t0, t1, 2f
+            call scr_println
+            j 3f
+2:      call scr_print
 
+3:
+    pop s1, 8
     stack_free
     ret
 endfn
@@ -61,10 +81,25 @@ endfn
 fn prints
     stack_alloc
     push a0, 8
+    push s1, 4
 
-    syscall SYSFN_PRINT_STR
+    li a0, INFO_OUTPUT_DEV             # get active output device(s)
+    syscall SYSFN_GET_CFG
+    mv s1, a0
 
+    andi t0, s1, 0b10
+    beqz t0, 1f
+        pop a0, 8
+        syscall SYSFN_PRINT_STR
 
+1:
+    andi t0, s1, 1
+    beqz t0, 2f
+        pop a0, 8
+        call scr_print
+
+2:
+    pop s1, 4
     stack_free
     ret
 endfn
@@ -73,11 +108,27 @@ endfn
 fn println
     stack_alloc
     push a0, 8
+    push s1, 4
 
-    syscall SYSFN_PRINT_STR
-    li a0, '\n'
-    syscall SYSFN_PRINT_CHAR
+    li a0, INFO_OUTPUT_DEV             # get active output device(s)
+    syscall SYSFN_GET_CFG
+    mv s1, a0
 
+    andi t0, s1, 0b10
+    beqz t0, 1f
+        pop a0, 8
+        syscall SYSFN_PRINT_STR
+        li a0, '\n'
+        syscall SYSFN_PRINT_CHAR
+
+1:
+    andi t0, s1, 1
+    beqz t0, 2f
+        pop a0, 8
+        call scr_println
+
+2:
+    pop s1, 4
     stack_free
     ret
 endfn
@@ -116,7 +167,7 @@ fn read_line
     mv s1, a0                          # s1 - pointer to the end of the string
 
     # call uart_get_status
-    mv a0, zero
+    mv s0, zero
     and s0, a0, 1                      # s0 - 1 if IRQ for uart is enabled, 0 otherwise
 
 1:
@@ -162,16 +213,30 @@ endfn
 
 
 fn _printc_bcksp
-    stack_alloc 4
+    stack_alloc
+    push s1, 8
 
-    li a0, '\b'
-    syscall SYSFN_PRINT_CHAR
-    li a0, ' '
-    syscall SYSFN_PRINT_CHAR
-    li a0, '\b'
-    syscall SYSFN_PRINT_CHAR
+    li a0, INFO_OUTPUT_DEV             # get active output device(s)
+    syscall SYSFN_GET_CFG
+    mv s1, a0
 
-    stack_free 4
+    andi t0, s1, 0b10
+    beqz t0, 1f
+        li a0, '\b'
+        syscall SYSFN_PRINT_CHAR
+        li a0, ' '
+        syscall SYSFN_PRINT_CHAR
+        li a0, '\b'
+        syscall SYSFN_PRINT_CHAR
+
+1:
+    andi t0, s1, 1
+    beqz t0, 2f
+        call scr_backspace
+
+2:
+    pop s1, 8
+    stack_free
     ret
 endfn
 
